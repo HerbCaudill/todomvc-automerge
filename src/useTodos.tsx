@@ -3,15 +3,16 @@ import { uuid } from './uuid'
 import { defaultTodos } from './defaultTodos'
 import { TodoType } from './types'
 
-export function useTodosLocalState() {
-  // native hooks
+export function useTodos() {
   const [todos, setTodos] = React.useState<TodoType[]>(defaultTodos)
-  // external API + implementation
+
   return {
     todos,
+
     async addNewTodo(value: string) {
       setTodos([...todos, { value, id: uuid(), completed: false }])
     },
+
     async updateTodo(modifiedTodo: TodoType) {
       setTodos(
         todos.map(todo =>
@@ -21,9 +22,9 @@ export function useTodosLocalState() {
         )
       )
     },
+
     clearCompletedTodos: () => {
-      window.confirm('Sure you want to clear completed todos?') &&
-        setTodos(todos.filter(t => !t.completed))
+      setTodos(todos.filter(t => !t.completed))
     },
   }
 }
