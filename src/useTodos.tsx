@@ -14,11 +14,22 @@ export function useTodos() {
       setTodos([...todos, { value, id: uuid(), completed: false }])
     },
 
-    async updateTodo(modifiedTodo: TodoType) {
+    async toggleAll() {
+      const toggleResult = todos.filter(t => t.completed).length > 0 ? false : true
+      setTodos(todos.map(todo => ({ ...todo, completed: toggleResult })))
+    },
+
+    async toggleTodo(modifiedTodo: TodoType) {
       setTodos(
         todos.map(todo =>
           todo.id !== modifiedTodo.id ? todo : { ...todo, completed: !todo.completed }
         )
+      )
+    },
+
+    async updateTodo(modifiedTodo: TodoType) {
+      setTodos(
+        todos.map(todo => (todo.id !== modifiedTodo.id ? todo : { ...todo, ...modifiedTodo }))
       )
     },
 

@@ -6,7 +6,8 @@ import { TodoType } from './types'
 export function Todos({
   todos,
   addNewTodo,
-  updateTodo,
+  toggleTodo,
+  toggleAll,
   clearCompletedTodos,
   deleteTodo,
   todosTitle = 'todos',
@@ -38,13 +39,6 @@ export function Todos({
 
   const highlightIfSelected = (which: string) => cn({ selected: filter === which })
 
-  const toggleAll = () => {
-    const toggleResult = todosMap.active.length > 0 ? true : false
-    todos.forEach(todo => {
-      updateTodo({ ...todo, completed: toggleResult })
-    })
-  }
-
   return (
     <section className="todoapp">
       <header className="header">
@@ -70,7 +64,7 @@ export function Todos({
                   className="toggle"
                   type="checkbox"
                   checked={todo.completed}
-                  onChange={() => updateTodo({ ...todo, completed: !todo.completed })}
+                  onChange={() => toggleTodo({ ...todo, completed: !todo.completed })}
                 />
                 <label>{todo.value}</label>
                 <button className="destroy" onClick={() => deleteTodo(todo.id)}></button>
@@ -127,6 +121,8 @@ export function Todos({
 export type TodosProps = {
   todos: TodoType[]
   addNewTodo: (value: string) => Promise<void>
+  toggleAll: () => Promise<void>
+  toggleTodo: (modifiedTodo: TodoType) => Promise<void>
   updateTodo: (modifiedTodo: TodoType) => Promise<void>
   deleteTodo: (id: string) => Promise<void>
   clearCompletedTodos: () => void
