@@ -7,19 +7,22 @@ export const Todo = ({ updateTodo, toggleTodo, deleteTodo, id, value, completed 
   const [editing, setEditing] = React.useState(false)
   const [newValue, setNewValue] = React.useState(value)
 
-  const inputRef = React.useRef<HTMLInputElement>(null)
-
-  const onEdit = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && newValue.length > 0) {
-      setEditing(false)
-      updateTodo({ id, value: newValue, completed })
-    }
-  }
-
   // select all when entering editing state
+  const inputRef = React.useRef<HTMLInputElement>(null)
   React.useEffect(() => {
     if (editing) inputRef.current?.select()
   }, [editing])
+
+  const commitEdit = () => {
+    setEditing(false)
+    if (newValue.length) {
+      // save the new value if it's non-empty
+      updateTodo({ id, value: newValue, completed })
+    } else {
+      // clearing the text deletes the todo
+      deleteTodo(id)
+    }
+  }
 
   return (
     <li className={cn({ completed, editing })}>
@@ -46,12 +49,11 @@ export const Todo = ({ updateTodo, toggleTodo, deleteTodo, id, value, completed 
       <input
         ref={inputRef}
         className="edit"
-        onKeyPress={onEdit}
-        onBlur={() => {
-          setEditing(false)
-          updateTodo({ id, value: newValue, completed })
-        }}
+        // track the value as we type
         onChange={e => setNewValue(e.target.value)}
+        // save the value when done
+        onKeyPress={e => e.key === 'Enter' && commitEdit()}
+        onBlur={commitEdit}
         defaultValue={newValue}
       />
     </li>

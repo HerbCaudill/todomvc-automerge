@@ -17,6 +17,8 @@ export function Todos({
   // filters
 
   const [filter, setFilter] = React.useState('all')
+  const show = (f: string) => () => setFilter(f)
+
   const todosMap = {
     all: todos,
     active: todos.filter(t => !t.completed),
@@ -35,11 +37,7 @@ export function Todos({
     }
   }
 
-  const showAll = () => setFilter('all')
-  const showActive = () => setFilter('active')
-  const showCompleted = () => setFilter('completed')
-
-  const highlightIfSelected = (which: string) => cn({ selected: filter === which })
+  const highlightIf = (which: string) => cn({ selected: filter === which })
 
   const itemCount = `${todosMap.active.length}/${todos.length}`
 
@@ -81,21 +79,13 @@ export function Todos({
 
           {/* filters */}
           <ul className="filters">
-            <li>
-              <a className={highlightIfSelected('all')} onClick={showAll}>
-                All
-              </a>
-            </li>
-            <li>
-              <a className={highlightIfSelected('active')} onClick={showActive}>
-                Active
-              </a>
-            </li>
-            <li>
-              <a className={highlightIfSelected('completed')} onClick={showCompleted}>
-                Completed
-              </a>
-            </li>
+            {['All', 'Active', 'Completed'].map(f => (
+              <li key={f}>
+                <a className={highlightIf(f.toLowerCase())} onClick={show(f.toLowerCase())}>
+                  {f}
+                </a>
+              </li>
+            ))}
           </ul>
 
           {/* clear completed button */}
@@ -103,7 +93,7 @@ export function Todos({
             className="clear-completed"
             onClick={() => {
               clearCompletedTodos()
-              showAll()
+              setFilter('all')
             }}
           >
             Clear completed
