@@ -1,12 +1,16 @@
 {
   "name": "todomvc-automerge",
   "version": "0.0.0",
+  "license": "MIT",
+  "author": "herb@devresults.com",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "postinstall": "cd node_modules/automerge && yarn && yarn build && cd ../.."
   },
   "dependencies": {
+    "automerge": "git+https://@github.com/automerge/automerge.git#performance",
     "todomvc-app-css": "2",
     "classnames": "2",
     "react": "17",
