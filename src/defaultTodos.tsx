@@ -9,7 +9,7 @@ export const defaultTodos: TodoType[] = [
   {
     id: '1',
     completed: false,
-    value: 'Learn AWS',
+    value: 'Learn Automerge',
   },
   {
     id: '2',

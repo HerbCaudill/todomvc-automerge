@@ -2,6 +2,7 @@
 import { uuid } from './uuid'
 import { defaultTodos } from './defaultTodos'
 import { TodoType } from './types'
+import { TodosProps } from './Todos'
 
 export function useTodos() {
   const [todos, setTodos] = React.useState<TodoType[]>(defaultTodos)
@@ -16,15 +17,17 @@ export function useTodos() {
     async updateTodo(modifiedTodo: TodoType) {
       setTodos(
         todos.map(todo =>
-          todo.id !== modifiedTodo.id
-            ? todo
-            : { ...todo, completed: !todo.completed }
+          todo.id !== modifiedTodo.id ? todo : { ...todo, completed: !todo.completed }
         )
       )
+    },
+
+    async deleteTodo(id: string) {
+      setTodos(todos.filter(todo => todo.id !== id))
     },
 
     clearCompletedTodos: () => {
       setTodos(todos.filter(t => !t.completed))
     },
-  }
+  } as TodosProps
 }

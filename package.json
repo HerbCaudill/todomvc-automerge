@@ -19,5 +19,12 @@
     "@vitejs/plugin-react-refresh": "1",
     "typescript": "4",
     "vite": "2"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "semi": false,
+    "singleQuote": true,
+    "trailingComma": "es5",
+    "arrowParens": "avoid"
   }
 }
