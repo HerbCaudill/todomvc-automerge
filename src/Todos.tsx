@@ -44,71 +44,78 @@ export function Todos({
   const itemCount = `${todosMap.active.length}/${todos.length}`
 
   return (
-    <section className="todoapp">
-      <header className="header">
-        <h1>{todosTitle}</h1>
+    <>
+      <section className="todoapp">
+        <header className="header">
+          <h1>{todosTitle}</h1>
 
-        {/* new todo input */}
-        <input
-          className="new-todo"
-          placeholder="What needs to be done?"
-          autoFocus
-          onKeyPress={onNewTodo}
-          onChange={e => setNewTodo(e.target.value)}
-          value={newTodo}
-        />
-      </header>
+          {/* new todo input */}
+          <input
+            className="new-todo"
+            placeholder="What needs to be done?"
+            autoFocus
+            onKeyPress={onNewTodo}
+            onChange={e => setNewTodo(e.target.value)}
+            value={newTodo}
+          />
+        </header>
 
-      <section className="main">
-        {/* toggle all */}
-        <input id="toggle-all" className="toggle-all" type="checkbox" onClick={toggleAll} />
-        <label htmlFor="toggle-all">Mark all as complete</label>
+        <section className="main">
+          {/* toggle all */}
+          <input id="toggle-all" className="toggle-all" type="checkbox" onClick={toggleAll} />
+          <label htmlFor="toggle-all">Mark all as complete</label>
 
-        {/* todo list */}
-        <ul className="todo-list">
-          {filteredTodos.map(todo => {
-            return <Todo key={todo.id} {...{ updateTodo, toggleTodo, deleteTodo }} {...todo} />
-          })}
-        </ul>
+          {/* todo list */}
+          <ul className="todo-list">
+            {filteredTodos.map(todo => {
+              return <Todo key={todo.id} {...{ updateTodo, toggleTodo, deleteTodo }} {...todo} />
+            })}
+          </ul>
+        </section>
+
+        <footer className="footer">
+          {/* count */}
+          <span className="todo-count">
+            {`${itemCount} ${todosMap.active.length > 1 ? 'items left' : 'item left'}`}
+          </span>
+
+          {/* filters */}
+          <ul className="filters">
+            <li>
+              <a className={highlightIfSelected('all')} onClick={showAll}>
+                All
+              </a>
+            </li>
+            <li>
+              <a className={highlightIfSelected('active')} onClick={showActive}>
+                Active
+              </a>
+            </li>
+            <li>
+              <a className={highlightIfSelected('completed')} onClick={showCompleted}>
+                Completed
+              </a>
+            </li>
+          </ul>
+
+          {/* clear completed button */}
+          <button
+            className="clear-completed"
+            onClick={() => {
+              clearCompletedTodos()
+              showAll()
+            }}
+          >
+            Clear completed
+          </button>
+        </footer>
       </section>
-
-      <footer className="footer">
-        {/* count */}
-        <span className="todo-count">
-          {`${itemCount} ${todosMap.active.length > 1 ? 'items left' : 'item left'}`}
-        </span>
-
-        {/* filters */}
-        <ul className="filters">
-          <li>
-            <a className={highlightIfSelected('all')} onClick={showAll}>
-              All
-            </a>
-          </li>
-          <li>
-            <a className={highlightIfSelected('active')} onClick={showActive}>
-              Active
-            </a>
-          </li>
-          <li>
-            <a className={highlightIfSelected('completed')} onClick={showCompleted}>
-              Completed
-            </a>
-          </li>
-        </ul>
-
-        {/* clear completed button */}
-        <button
-          className="clear-completed"
-          onClick={() => {
-            clearCompletedTodos()
-            showAll()
-          }}
-        >
-          Clear completed
-        </button>
+      <footer className="info">
+        <p>
+          Learn more about <a href="http://github.com/automerge/automerge">Automerge</a>
+        </p>
       </footer>
-    </section>
+    </>
   )
 }
 
