@@ -1,12 +1,14 @@
 import cn from 'classnames'
 import React from 'react'
 import 'todomvc-app-css/index.css'
+import { Todo } from './Todo'
 import { TodoType } from './types'
 
 export function Todos({
   todos,
   addNewTodo,
   toggleTodo,
+  updateTodo,
   toggleAll,
   clearCompletedTodos,
   deleteTodo,
@@ -25,11 +27,11 @@ export function Todos({
 
   // new todo
   const [newTodo, setNewTodo] = React.useState('')
-  const clearNewTodo = () => setNewTodo('')
 
   const onNewTodo = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && newTodo.length > 0) {
-      addNewTodo(newTodo).then(clearNewTodo)
+      addNewTodo(newTodo)
+      setNewTodo('') // clear input
     }
   }
 
@@ -39,10 +41,14 @@ export function Todos({
 
   const highlightIfSelected = (which: string) => cn({ selected: filter === which })
 
+  const itemCount = `${todosMap.active.length}/${todos.length}`
+
   return (
     <section className="todoapp">
       <header className="header">
         <h1>{todosTitle}</h1>
+
+        {/* new todo input */}
         <input
           className="new-todo"
           placeholder="What needs to be done?"
@@ -54,34 +60,22 @@ export function Todos({
       </header>
 
       <section className="main">
+        {/* toggle all */}
         <input id="toggle-all" className="toggle-all" type="checkbox" onClick={toggleAll} />
         <label htmlFor="toggle-all">Mark all as complete</label>
+
+        {/* todo list */}
         <ul className="todo-list">
-          {filteredTodos.map(todo => (
-            <li key={todo.id} className={cn({ completed: todo.completed })}>
-              <div className="view">
-                <input
-                  className="toggle"
-                  type="checkbox"
-                  checked={todo.completed}
-                  onChange={() => toggleTodo({ ...todo, completed: !todo.completed })}
-                />
-                <label>{todo.value}</label>
-                <button className="destroy" onClick={() => deleteTodo(todo.id)}></button>
-              </div>
-              <input className="edit" defaultValue={todo.value} />
-            </li>
-          ))}
+          {filteredTodos.map(todo => {
+            return <Todo key={todo.id} {...{ updateTodo, toggleTodo, deleteTodo }} {...todo} />
+          })}
         </ul>
       </section>
 
       <footer className="footer">
         {/* count */}
         <span className="todo-count">
-          <strong>
-            {todosMap.active.length}/{todos.length}
-          </strong>{' '}
-          item{todosMap.active.length > 1 && 's'} left
+          {`${itemCount} ${todosMap.active.length > 1 ? 'items left' : 'item left'}`}
         </span>
 
         {/* filters */}
@@ -118,7 +112,7 @@ export function Todos({
   )
 }
 
-export type TodosProps = {
+export interface TodosProps {
   todos: TodoType[]
   addNewTodo: (value: string) => Promise<void>
   toggleAll: () => Promise<void>
