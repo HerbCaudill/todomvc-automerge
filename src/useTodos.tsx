@@ -1,44 +1,82 @@
 ﻿import React from 'react'
+import * as A from 'automerge'
 import { uuid } from './uuid'
 import { defaultTodos } from './defaultTodos'
-import { TodoType } from './types'
+import { State, TodoType } from './types'
 import { TodosProps } from './Todos'
 
-export function useTodos() {
-  const [todos, setTodos] = React.useState<TodoType[]>(defaultTodos)
+export const useTodos: TodosHook = () => {
+  const [state, setState] = React.useState(defaultTodos)
+
+  const change = (s: A.Doc<State>, cb: (s: A.Proxy<A.Doc<State>>) => void) => {
+    setState(A.change(s, cb))
+  }
 
   return {
-    todos,
+    state,
 
-    async addNewTodo(value: string) {
-      setTodos([...todos, { value, id: uuid(), completed: false }])
+    addNewTodo(value: string) {
+      change(state, state => {
+        // make a new todo
+        const newTodo = { value, id: uuid(), completed: false }
+        // add it to the list
+        state.todos.push(newTodo)
+      })
     },
 
-    async toggleAll() {
-      const toggleResult = todos.filter(t => t.completed).length > 0 ? false : true
-      setTodos(todos.map(todo => ({ ...todo, completed: toggleResult })))
+    toggleAll() {
+      // check or uncheck everything, depending on whether any are currently checked
+      const allCompleted = state.todos.some(t => t.completed) ? false : true // if any are checked, uncheck all
+      change(state, state => {
+        state.todos.forEach(t => (t.completed = allCompleted))
+      })
     },
 
-    async toggleTodo(modifiedTodo: TodoType) {
-      setTodos(
-        todos.map(todo =>
-          todo.id !== modifiedTodo.id ? todo : { ...todo, completed: !todo.completed }
-        )
-      )
+    toggleTodo(id: string) {
+      change(state, state => {
+        // find the todo
+        const todo = state.todos.find(t => t.id === id)
+        // toggle it
+        if (todo !== undefined) {
+          todo.completed = !todo.completed
+        }
+      })
     },
 
-    async updateTodo(modifiedTodo: TodoType) {
-      setTodos(
-        todos.map(todo => (todo.id !== modifiedTodo.id ? todo : { ...todo, ...modifiedTodo }))
-      )
+    updateTodo(modifiedTodo: TodoType) {
+      change(state, state => {
+        // find the todo
+        const todo = state.todos.find(t => t.id === modifiedTodo.id)
+        // update it
+        if (todo !== undefined) {
+          todo.value = modifiedTodo.value
+          todo.completed = modifiedTodo.completed
+        }
+      })
     },
 
-    async deleteTodo(id: string) {
-      setTodos(todos.filter(todo => todo.id !== id))
+    deleteTodo(id: string) {
+      change(state, state => {
+        const i = state.todos.findIndex(t => t.id === id)
+        state.todos.deleteAt(i)
+      })
     },
 
     clearCompletedTodos: () => {
-      setTodos(todos.filter(t => !t.completed))
+      change(state, state => {
+        let i = 0
+        let length = state.todos.length
+        while (i < length) {
+          if (state.todos[i].completed) {
+            state.todos.deleteAt(i)
+            length -= 1
+          } else {
+            i += 1
+          }
+        }
+      })
     },
-  } as TodosProps
+  }
 }
+
+type TodosHook = () => TodosProps

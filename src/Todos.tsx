@@ -1,11 +1,12 @@
+import * as A from 'automerge'
 import cn from 'classnames'
 import React from 'react'
 import 'todomvc-app-css/index.css'
 import { Todo } from './Todo'
-import { TodoType } from './types'
+import { State, TodoType } from './types'
 
 export function Todos({
-  todos,
+  state,
   addNewTodo,
   toggleTodo,
   updateTodo,
@@ -14,8 +15,9 @@ export function Todos({
   deleteTodo,
   todosTitle = 'todos',
 }: TodosProps) {
-  // filters
+  const { todos } = state
 
+  // filters
   const [filter, setFilter] = React.useState('all')
   const show = (f: string) => () => setFilter(f)
 
@@ -110,12 +112,12 @@ export function Todos({
 }
 
 export interface TodosProps {
-  todos: TodoType[]
-  addNewTodo: (value: string) => Promise<void>
-  toggleAll: () => Promise<void>
-  toggleTodo: (modifiedTodo: TodoType) => Promise<void>
-  updateTodo: (modifiedTodo: TodoType) => Promise<void>
-  deleteTodo: (id: string) => Promise<void>
+  state: A.Doc<State>
+  addNewTodo: (value: string) => void
+  toggleAll: () => void
+  toggleTodo: (id: string) => void
+  updateTodo: (modifiedTodo: TodoType) => void
+  deleteTodo: (id: string) => void
   clearCompletedTodos: () => void
   todosTitle?: string
   children?: React.ReactNode

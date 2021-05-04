@@ -32,7 +32,7 @@ export const Todo = ({ updateTodo, toggleTodo, deleteTodo, id, value, completed 
           className="toggle"
           type="checkbox"
           checked={completed}
-          onChange={() => toggleTodo({ id, value, completed })}
+          onChange={() => toggleTodo(id)}
         />
         <label
           onDoubleClick={e => {
