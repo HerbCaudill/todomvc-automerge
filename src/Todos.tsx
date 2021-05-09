@@ -4,17 +4,20 @@ import React from 'react'
 import 'todomvc-app-css/index.css'
 import { Todo } from './Todo'
 import { State, TodoType } from './types'
+import { useTodos } from './useTodos'
 
-export function Todos({
-  state,
-  addNewTodo,
-  toggleTodo,
-  updateTodo,
-  toggleAll,
-  clearCompletedTodos,
-  deleteTodo,
-  todosTitle = 'todos',
-}: TodosProps) {
+export function Todos({}) {
+  const {
+    state,
+    addNewTodo,
+    toggleTodo,
+    updateTodo,
+    toggleAll,
+    clearCompletedTodos,
+    deleteTodo,
+  } = useTodos()
+
+  const todosTitle = 'todos'
   const { todos } = state
 
   // filters
