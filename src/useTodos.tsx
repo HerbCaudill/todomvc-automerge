@@ -8,7 +8,8 @@ const urls = ['ws://localhost:8080']
 const userId = uuid().slice(32, 36)
 
 export function useTodos() {
-  const { state, change } = useAutomergeSync({ state: defaultState, urls, userId, key })
+  const { state, change } = useAutomergeSync({ defaultState, urls, userId, key })
+
   return {
     state,
 
