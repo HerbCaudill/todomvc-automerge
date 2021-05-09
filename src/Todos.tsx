@@ -42,7 +42,6 @@ export function Todos({
   const highlightIf = (which: string) => cn({ selected: filter === which })
 
   const itemCount = `${todosMap.active.length}/${todos.length}`
-
   return (
     <>
       <section className="todoapp">

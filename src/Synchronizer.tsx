@@ -1,22 +1,21 @@
-﻿import A from 'automerge'
-import { Client } from '@localfirst/relay-client'
+﻿import * as A from 'automerge'
+import { Client, PeerEventPayload } from '@localfirst/relay-client'
 import EventEmitter from 'eventemitter3'
 
 export class Synchronizer extends EventEmitter {
   private client: Client
-  private sockets: Record<string, WebSocket> = {}
-  private syncStates: Record<string, A.SyncState> = {}
-  private userName: string
+  private peers: Record<string, Peer> = {}
+  private userId: string
   private discoveryKey: string
   private doc: A.Doc<any>
 
   /**
-   * Connects to peers via a @localfirst/relay, and keeps the
+   * Connects to peers via a @localfirst/relay to keep an Automerge document in sync
    */
-  constructor({ urls, userName, doc, discoveryKey }: SynchronizerOptions) {
+  constructor({ urls, userId: userId, doc, discoveryKey }: SynchronizerOptions) {
     super()
     this.discoveryKey = discoveryKey
-    this.userName = userName
+    this.userId = userId
     this.doc = doc
 
     // connect to relay server
@@ -29,65 +28,76 @@ export class Synchronizer extends EventEmitter {
     return this.doc
   }
 
-  private get peerUserNames() {
-    return Object.keys(this.sockets)
+  private get peerIds() {
+    return Object.keys(this.peers)
   }
 
   private connectServer(url: string): Client {
-    const client = new Client({ userName: this.userName, url })
+    const client = new Client({ userName: this.userId, url })
     client
       .on('server.connect', () => {
         client.join(this.discoveryKey)
       })
-      .on('peer.connect', ({ userName, socket }) => {
-        this.connectPeer(socket, userName)
+      .on('peer.connect', ({ userName: userId, socket }: PeerEventPayload) => {
+        socket.binaryType = 'arraybuffer'
+        this.connectPeer(socket, userId)
       })
     return client
   }
 
   public disconnectServer() {
     // when the relay server closes our connection, close all our sockets
-    this.peerUserNames.forEach(userName => this.disconnectPeer(userName))
+    this.peerIds.forEach(peerId => this.disconnectPeer(peerId))
   }
 
-  private connectPeer(socket: WebSocket, peerUserName: string) {
-    // keep track of the socket and its associated sync state
-    this.sockets[peerUserName] = socket
-    this.syncStates[peerUserName] = A.initSyncState()
-    socket.addEventListener('message', event => {
-      const message: A.BinarySyncMessage = event.data
-      const prevSyncState = this.syncStates[peerUserName]
-      const [doc, syncState] = A.receiveSyncMessage(this.doc, prevSyncState, message)
+  private connectPeer(socket: WebSocket, peerId: string) {
+    const peer = { peerId, socket, syncState: A.initSyncState() }
+    this.peers[peerId] = peer
+
+    // handle incoming messages
+    socket.addEventListener('message', async event => {
+      const message = new Uint8Array(event.data) as A.BinarySyncMessage
+
+      // apply any changes to our internal state
+      const [doc, nextSyncState] = A.receiveSyncMessage(this.doc, peer.syncState, message)
       this.doc = doc
-      this.syncStates[peerUserName] = syncState
+      peer.syncState = nextSyncState
+
+      // update our peers
       this.sync()
+
+      // update the application
+      this.emit('change', this.doc)
     })
+
     socket.addEventListener('close', () => {
-      this.disconnectPeer(peerUserName)
+      this.disconnectPeer(peerId)
     })
   }
 
   private sync() {
-    this.peerUserNames.forEach(userName => {
-      const socket = this.sockets[userName]
-      const prevSyncState = this.syncStates[userName]
-      const [syncState, message] = A.generateSyncMessage(this.doc, prevSyncState)
-      this.syncStates[userName] = syncState
+    this.peerIds.forEach(peerId => {
+      const peer = this.peers[peerId]
+      if (!peer) return
+      const { socket, syncState } = peer
+      const [nextSyncState, message] = A.generateSyncMessage(this.doc, syncState)
+      peer.syncState = nextSyncState
       if (message) socket.send(message)
     })
   }
 
-  private disconnectPeer(userName: string) {
+  private disconnectPeer(peerId: string) {
     // close the socket and forget it existed
-    const socket = this.sockets[userName]
-    if (socket) {
-      if (socket.readyState === WebSocket.OPEN) socket.close()
-      delete this.sockets[userName]
-      delete this.syncStates[userName]
+    const peer = this.peers[peerId]
+    if (!peer) return
+    const { socket } = peer
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.close()
+      delete this.peers[peerId]
     }
 
     // notify relay server
-    this.client.disconnectPeer(userName)
+    this.client.disconnectPeer(peerId)
   }
 }
 
@@ -97,7 +107,13 @@ interface SynchronizerOptions {
   /** An array of URLs of known relay servers */
   urls: string[]
   /** A unique string identifying the local user (could be a UUID, a user id, an email address, etc.) */
-  userName: string
+  userId: string
   /** The doc to keep synchronized */
   doc: A.Doc<any>
+}
+
+interface Peer {
+  peerId: string
+  socket: WebSocket
+  syncState: A.SyncState
 }

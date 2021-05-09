@@ -8,20 +8,25 @@ import { Synchronizer } from './Synchronizer'
 
 const discoveryKey = 'frisky-meerkat'
 const urls = ['ws://localhost:8080']
+const userId = uuid().slice(32, 36)
 
 export const useTodos: TodosHook = () => {
-  const userName = React.useRef(uuid())
   const [state, setState] = React.useState(defaultState)
   const [synchronizer] = React.useState(
-    () => new Synchronizer({ urls, userName: userName.current, doc: state, discoveryKey })
+    () => new Synchronizer({ urls, userId, doc: state, discoveryKey })
   )
 
-  // change state and synchronize with peers
+  // when we get changes from the ui, update our peers
   const change = (cb: A.ChangeFn<State>) => {
     const newState = synchronizer.change(cb)
     setState(newState)
     return newState
   }
+
+  // when we receive changes from peers, update the ui
+  synchronizer.on('change', (newState: State) => {
+    setState(newState)
+  })
 
   return {
     state,
@@ -36,33 +41,34 @@ export const useTodos: TodosHook = () => {
     },
 
     toggleAll() {
-      // check or uncheck everything, depending on whether any are currently checked
-      const allCompleted = state.todos.some(t => t.completed) ? false : true // if any are checked, uncheck all
-      change(s => {
-        s.todos.forEach(t => (t.completed = allCompleted))
-      })
+      // if any are checked, uncheck all; otherwise check all
+      const someChecked = state.todos.some(t => t.completed)
+      const newCheckedState = someChecked ? false : true
+      change(s => s.todos.forEach(t => (t.completed = newCheckedState)))
     },
 
     toggleTodo(id: string) {
       change(s => {
         // find the todo
         const todo = s.todos.find(t => t.id === id)
+        if (!todo) return
+
         // toggle it
-        if (todo !== undefined) {
-          todo.completed = !todo.completed
-        }
+        todo.completed = !todo.completed
       })
     },
 
     updateTodo(modifiedTodo: TodoType) {
       change(s => {
+        const { id, value, completed } = modifiedTodo
+
         // find the todo
-        const todo = s.todos.find(t => t.id === modifiedTodo.id)
+        const todo = s.todos.find(t => t.id === id)
+        if (!todo) return
+
         // update it
-        if (todo !== undefined) {
-          todo.value = modifiedTodo.value
-          todo.completed = modifiedTodo.completed
-        }
+        todo.value = value
+        todo.completed = completed
       })
     },
 
