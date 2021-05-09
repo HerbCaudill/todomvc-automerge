@@ -4,37 +4,49 @@ import { uuid } from './uuid'
 import { defaultState } from './defaultState'
 import { State, TodoType } from './types'
 import { TodosProps } from './Todos'
+import { Synchronizer } from './Synchronizer'
+
+const discoveryKey = 'frisky-meerkat'
+const urls = ['ws://localhost:8080']
 
 export const useTodos: TodosHook = () => {
+  const userName = React.useRef(uuid())
   const [state, setState] = React.useState(defaultState)
+  const [synchronizer] = React.useState(
+    () => new Synchronizer({ urls, userName: userName.current, doc: state, discoveryKey })
+  )
 
-  // compose `setState` and `A.change`
-  const change = (s: A.Doc<State>, cb: A.ChangeFn<State>) => setState(A.change(s, cb))
+  // change state and synchronize with peers
+  const change = (cb: A.ChangeFn<State>) => {
+    const newState = synchronizer.change(cb)
+    setState(newState)
+    return newState
+  }
 
   return {
     state,
 
     addNewTodo(value: string) {
-      change(state, state => {
+      change(s => {
         // make a new todo
         const newTodo = { value, id: uuid(), completed: false }
         // add it to the list
-        state.todos.push(newTodo)
+        s.todos.push(newTodo)
       })
     },
 
     toggleAll() {
       // check or uncheck everything, depending on whether any are currently checked
       const allCompleted = state.todos.some(t => t.completed) ? false : true // if any are checked, uncheck all
-      change(state, state => {
-        state.todos.forEach(t => (t.completed = allCompleted))
+      change(s => {
+        s.todos.forEach(t => (t.completed = allCompleted))
       })
     },
 
     toggleTodo(id: string) {
-      change(state, state => {
+      change(s => {
         // find the todo
-        const todo = state.todos.find(t => t.id === id)
+        const todo = s.todos.find(t => t.id === id)
         // toggle it
         if (todo !== undefined) {
           todo.completed = !todo.completed
@@ -43,9 +55,9 @@ export const useTodos: TodosHook = () => {
     },
 
     updateTodo(modifiedTodo: TodoType) {
-      change(state, state => {
+      change(s => {
         // find the todo
-        const todo = state.todos.find(t => t.id === modifiedTodo.id)
+        const todo = s.todos.find(t => t.id === modifiedTodo.id)
         // update it
         if (todo !== undefined) {
           todo.value = modifiedTodo.value
@@ -55,19 +67,19 @@ export const useTodos: TodosHook = () => {
     },
 
     deleteTodo(id: string) {
-      change(state, state => {
-        const i = state.todos.findIndex(t => t.id === id)
-        state.todos.deleteAt(i)
+      change(s => {
+        const i = s.todos.findIndex(t => t.id === id)
+        s.todos.deleteAt!(i)
       })
     },
 
     clearCompletedTodos: () => {
-      change(state, state => {
+      change(s => {
         let i = 0
-        let length = state.todos.length
+        let length = s.todos.length
         while (i < length) {
-          if (state.todos[i].completed) {
-            state.todos.deleteAt(i)
+          if (s.todos[i].completed) {
+            s.todos.deleteAt!(i)
             length -= 1
           } else {
             i += 1
