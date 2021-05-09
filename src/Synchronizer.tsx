@@ -19,7 +19,8 @@ export class Synchronizer extends EventEmitter {
     this.doc = doc
 
     // connect to relay server
-    this.client = this.connectServer(urls[0])
+    const url = urls[0] // TODO support multiple relay servers
+    this.client = this.connectServer(url)
   }
 
   /** Connect to a @localfirst/relay server to see if there are peers to connect to */
@@ -129,8 +130,12 @@ export class Synchronizer extends EventEmitter {
 
   /** Apply changes coming from the application to our document, and send updates to all peers. */
   public change(cb: A.ChangeFn<any>) {
+    // apply the change to our document
     this.doc = A.change(this.doc, cb)
+
+    // send updates to all our peers
     this.sync()
+
     return this.doc
   }
 }

@@ -23,7 +23,7 @@ export const useTodos: TodosHook = () => {
     return newState
   }
 
-  // when we receive changes from peers, update the ui
+  // when we get changes from peers, update the ui
   synchronizer.on('change', (newState: State) => {
     setState(newState)
   })

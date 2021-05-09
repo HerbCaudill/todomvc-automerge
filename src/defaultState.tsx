@@ -1,7 +1,7 @@
 ﻿import * as A from 'automerge'
 import { State } from './types'
 
-export const defaultState: A.Doc<State> = A.from({
+export const defaultState = A.from<State>({
   todos: [
     {
       id: '0',
