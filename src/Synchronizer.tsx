@@ -12,7 +12,7 @@ export class Synchronizer extends EventEmitter {
   /**
    * Connects to peers via a @localfirst/relay to keep an Automerge document in sync
    */
-  constructor({ urls, userId: userId, doc, discoveryKey }: SynchronizerOptions) {
+  constructor({ urls, userId, doc, discoveryKey }: SynchronizerOptions) {
     super()
     this.discoveryKey = discoveryKey
     this.userId = userId
@@ -22,13 +22,7 @@ export class Synchronizer extends EventEmitter {
     this.client = this.connectServer(urls[0])
   }
 
-  /** Applies changes coming from the application to our document, and sends updates to all peers. */
-  public change(cb: A.ChangeFn<any>) {
-    this.doc = A.change(this.doc, cb)
-    this.sync()
-    return this.doc
-  }
-
+  /** Connect to a @localfirst/relay server to see if there are peers to connect to */
   private connectServer(url: string): Client {
     const client = new Client({ userName: this.userId, url })
 
@@ -56,15 +50,16 @@ export class Synchronizer extends EventEmitter {
     return client
   }
 
-  /** Cleans up when the relay server disconnects from us */
+  /** Clean up when the relay server is disconected from us */
   public disconnectServer() {
-    // when the relay server closes our connection, close all our sockets
+    this.client.removeAllListeners()
+    // close all our sockets
     for (const [peerId] of this.peers) {
       this.disconnectPeer(peerId)
     }
   }
 
-  /** Registers a new peer and listens for incoming messages */
+  /** Register a new peer and listens for incoming messages */
   private connectPeer(socket: WebSocket, peerId: string) {
     const peer = { peerId, socket, syncState: A.initSyncState() }
     this.peers.set(peerId, peer)
@@ -80,7 +75,7 @@ export class Synchronizer extends EventEmitter {
     })
   }
 
-  /** Disconnects from a peer */
+  /** Clean up when a peer is disconnected from a peer */
   private disconnectPeer(peerId: string) {
     const peer = this.peers.get(peerId)
     if (!peer) return
@@ -96,14 +91,29 @@ export class Synchronizer extends EventEmitter {
     this.client.disconnectPeer(peerId)
   }
 
-  /** Sends a sync message to a peer */
+  /** Check the known state of each peer and sends them a sync message if necessary */
+  private sync() {
+    for (const [_peerId, peer] of this.peers) {
+      // compares the current state of our document to each peer's last known state, and if we think
+      // there are changes they don't have, generate a sync message
+      const [nextSyncState, message] = A.generateSyncMessage(this.doc, peer.syncState)
+
+      // update this peer's sync state
+      peer.syncState = nextSyncState
+
+      // only send a message if something has changed (if no changes, message will be null)
+      if (message) this.send(peer, message)
+    }
+  }
+
+  /** Send a sync message to a peer */
   private send(peer: Peer, message: A.BinarySyncMessage) {
     if (peer.socket.readyState === WebSocket.OPEN) {
       peer.socket.send(message)
     }
   }
 
-  /** Handles an incoming sync message from a peer */
+  /** Handle an incoming sync message from a peer */
   private receive(peer: Peer, message: A.BinarySyncMessage) {
     // using the message, update our document and sync state for the peer
     const [doc, nextSyncState] = A.receiveSyncMessage(this.doc, peer.syncState, message)
@@ -117,17 +127,11 @@ export class Synchronizer extends EventEmitter {
     this.sync()
   }
 
-  private sync() {
-    for (const [_peerId, peer] of this.peers) {
-      // generate a message for each peer with anything they might not know
-      const [nextSyncState, message] = A.generateSyncMessage(this.doc, peer.syncState)
-
-      // update our sync state for this peer
-      peer.syncState = nextSyncState
-
-      // only send a message if something has changed
-      if (message) this.send(peer, message)
-    }
+  /** Apply changes coming from the application to our document, and send updates to all peers. */
+  public change(cb: A.ChangeFn<any>) {
+    this.doc = A.change(this.doc, cb)
+    this.sync()
+    return this.doc
   }
 }
 
