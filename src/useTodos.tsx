@@ -1,5 +1,5 @@
 ﻿import { defaultState } from './defaultState'
-import { TodoType } from './types'
+import { State, TodoType } from './types'
 import { useAutomergeSync } from './useAutomergeSync'
 import { uuid } from './uuid'
 
@@ -8,12 +8,12 @@ const urls = ['ws://localhost:8080']
 const userId = uuid().slice(32, 36)
 
 export function useTodos() {
-  const { state, change } = useAutomergeSync({ defaultState, urls, userId, key })
+  const { state, change } = useAutomergeSync<State>({ defaultState, urls, userId, key })
 
   return {
-    state,
+    todos: state.todos,
 
-    addNewTodo(value: string) {
+    add(value: string) {
       change(s => {
         // make a new todo
         const newTodo = { value, id: uuid(), completed: false }
@@ -29,7 +29,7 @@ export function useTodos() {
       change(s => s.todos.forEach(t => (t.completed = newCheckedState)))
     },
 
-    toggleTodo(id: string) {
+    toggle(id: string) {
       change(s => {
         // find the todo
         const todo = s.todos.find(t => t.id === id)
@@ -40,7 +40,7 @@ export function useTodos() {
       })
     },
 
-    updateTodo(modifiedTodo: TodoType) {
+    update(modifiedTodo: TodoType) {
       change(s => {
         const { id, value, completed } = modifiedTodo
 
@@ -54,14 +54,14 @@ export function useTodos() {
       })
     },
 
-    deleteTodo(id: string) {
+    remove(id: string) {
       change(s => {
         const i = s.todos.findIndex(t => t.id === id)
         s.todos.deleteAt!(i)
       })
     },
 
-    clearCompletedTodos: () => {
+    clearCompleted: () => {
       change(s => {
         let i = 0
         let length = s.todos.length

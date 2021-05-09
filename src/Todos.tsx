@@ -7,18 +7,7 @@ import { State, TodoType } from './types'
 import { useTodos } from './useTodos'
 
 export function Todos({}) {
-  const {
-    state,
-    addNewTodo,
-    toggleTodo,
-    updateTodo,
-    toggleAll,
-    clearCompletedTodos,
-    deleteTodo,
-  } = useTodos()
-
-  const todosTitle = 'todos'
-  const { todos } = state
+  const { todos, add, toggle, update, toggleAll, clearCompleted, remove } = useTodos()
 
   // filters
   const [filter, setFilter] = React.useState('all')
@@ -37,7 +26,7 @@ export function Todos({}) {
 
   const onNewTodo = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && newTodo.length > 0) {
-      addNewTodo(newTodo)
+      add(newTodo)
       setNewTodo('') // clear input
     }
   }
@@ -49,7 +38,7 @@ export function Todos({}) {
     <>
       <section className="todoapp">
         <header className="header">
-          <h1>{todosTitle}</h1>
+          <h1>todos</h1>
 
           {/* new todo input */}
           <input
@@ -70,7 +59,7 @@ export function Todos({}) {
           {/* todo list */}
           <ul className="todo-list">
             {filteredTodos.map(todo => {
-              return <Todo key={todo.id} {...{ updateTodo, toggleTodo, deleteTodo }} {...todo} />
+              return <Todo key={todo.id} {...{ update, toggle, remove }} {...todo} />
             })}
           </ul>
         </section>
@@ -96,7 +85,7 @@ export function Todos({}) {
           <button
             className="clear-completed"
             onClick={() => {
-              clearCompletedTodos()
+              clearCompleted()
               setFilter('all')
             }}
           >
@@ -115,12 +104,10 @@ export function Todos({}) {
 
 export interface TodosProps {
   state: A.Doc<State>
-  addNewTodo: (value: string) => void
+  add: (value: string) => void
   toggleAll: () => void
-  toggleTodo: (id: string) => void
-  updateTodo: (modifiedTodo: TodoType) => void
-  deleteTodo: (id: string) => void
-  clearCompletedTodos: () => void
-  todosTitle?: string
-  children?: React.ReactNode
+  toggle: (id: string) => void
+  update: (modifiedTodo: TodoType) => void
+  remove: (id: string) => void
+  clearCompleted: () => void
 }

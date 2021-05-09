@@ -9,7 +9,7 @@ export function useAutomergeSync<T>({
   userId,
   key,
 }: UseAutomergeSyncOptions) {
-  const [state, setState] = React.useState(defaultState)
+  const [state, setState] = React.useState<A.Doc<T>>(defaultState)
   const [synchronizer] = React.useState(() => new AutomergeSync({ urls, userId, key, state }))
 
   // when we get changes from the application, update our peers
