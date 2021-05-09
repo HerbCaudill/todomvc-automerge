@@ -10,16 +10,26 @@ export function Todos({}) {
   const { todos, add, toggle, update, toggleAll, clearCompleted, remove } = useTodos()
 
   // filters
-  const [filter, setFilter] = React.useState('all')
+  const filters = ['All', 'Active', 'Completed']
+
+  const [filter, setFilter] = React.useState('All')
   const show = (f: string) => () => setFilter(f)
 
-  const todosMap = {
-    all: todos,
-    active: todos.filter(t => !t.completed),
-    completed: todos.filter(t => t.completed),
-  } as Record<string, TodoType[]>
+  const activeTodos = todos.filter(t => !t.completed)
+  const completedTodos = todos.filter(t => t.completed)
 
-  const filteredTodos = todosMap[filter]
+  const displayedTodos = () => {
+    switch (filter) {
+      case 'All':
+        return [...todos]
+      case 'Active':
+        return activeTodos
+      case 'Completed':
+        return completedTodos
+      default:
+        throw new Error()
+    }
+  }
 
   // new todo
   const [newTodo, setNewTodo] = React.useState('')
@@ -33,7 +43,7 @@ export function Todos({}) {
 
   const highlightIf = (which: string) => cn({ selected: filter === which })
 
-  const itemCount = `${todosMap.active.length}/${todos.length}`
+  const itemCount = `${activeTodos.length}/${todos.length}`
   return (
     <>
       <section className="todoapp">
@@ -58,7 +68,7 @@ export function Todos({}) {
 
           {/* todo list */}
           <ul className="todo-list">
-            {filteredTodos.map(todo => {
+            {displayedTodos().map(todo => {
               return <Todo key={todo.id} {...{ update, toggle, remove }} {...todo} />
             })}
           </ul>
@@ -67,16 +77,14 @@ export function Todos({}) {
         <footer className="footer">
           {/* count */}
           <span className="todo-count">
-            {`${itemCount} ${todosMap.active.length > 1 ? 'items left' : 'item left'}`}
+            {`${itemCount} ${activeTodos.length > 1 ? 'items left' : 'item left'}`}
           </span>
 
           {/* filters */}
           <ul className="filters">
-            {['All', 'Active', 'Completed'].map(f => (
+            {filters.map(f => (
               <li key={f}>
-                <a className={highlightIf(f.toLowerCase())} onClick={show(f.toLowerCase())}>
-                  {f}
-                </a>
+                <a className={highlightIf(f)} onClick={show(f)} children={f} />
               </li>
             ))}
           </ul>
@@ -86,7 +94,7 @@ export function Todos({}) {
             className="clear-completed"
             onClick={() => {
               clearCompleted()
-              setFilter('all')
+              setFilter('All')
             }}
           >
             Clear completed
