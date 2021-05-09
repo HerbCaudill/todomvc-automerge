@@ -1,16 +1,15 @@
 ﻿import React from 'react'
 import * as A from 'automerge'
 import { uuid } from './uuid'
-import { defaultTodos } from './defaultTodos'
+import { defaultState } from './defaultState'
 import { State, TodoType } from './types'
 import { TodosProps } from './Todos'
 
 export const useTodos: TodosHook = () => {
-  const [state, setState] = React.useState(defaultTodos)
+  const [state, setState] = React.useState(defaultState)
 
-  const change = (s: A.Doc<State>, cb: (s: A.Proxy<A.Doc<State>>) => void) => {
-    setState(A.change(s, cb))
-  }
+  // compose `setState` and `A.change`
+  const change = (s: A.Doc<State>, cb: A.ChangeFn<State>) => setState(A.change(s, cb))
 
   return {
     state,
