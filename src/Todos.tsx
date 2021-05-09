@@ -6,44 +6,46 @@ import { Todo } from './Todo'
 import { State, TodoType } from './types'
 import { useTodos } from './useTodos'
 
-export function Todos({}) {
-  const { todos, add, toggle, update, toggleAll, clearCompleted, remove } = useTodos()
+const EMPTY = ''
 
-  // filters
+export function Todos({}) {
+  const todos = useTodos()
+
+  // new todo
+  const [newTodo, setNewTodo] = React.useState(EMPTY)
+
+  const onNewTodo = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && newTodo.length > 0) {
+      todos.add(newTodo)
+      setNewTodo(EMPTY) // clear input
+    }
+  }
+
+  // filter buttons
   const filters = ['All', 'Active', 'Completed']
 
   const [filter, setFilter] = React.useState('All')
   const show = (f: string) => () => setFilter(f)
 
-  const activeTodos = todos.filter(t => !t.completed)
-  const completedTodos = todos.filter(t => t.completed)
-
-  const displayedTodos = () => {
+  const visibleTodos = () => {
     switch (filter) {
       case 'All':
-        return [...todos]
+        return todos.all
       case 'Active':
-        return activeTodos
+        return todos.active
       case 'Completed':
-        return completedTodos
+        return todos.completed
       default:
         throw new Error()
     }
   }
 
-  // new todo
-  const [newTodo, setNewTodo] = React.useState('')
-
-  const onNewTodo = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && newTodo.length > 0) {
-      add(newTodo)
-      setNewTodo('') // clear input
-    }
-  }
-
   const highlightIf = (which: string) => cn({ selected: filter === which })
 
-  const itemCount = `${activeTodos.length}/${todos.length}`
+  // item count
+
+  const itemCount = `${todos.active.length}/${todos.all.length}`
+
   return (
     <>
       <section className="todoapp">
@@ -63,13 +65,21 @@ export function Todos({}) {
 
         <section className="main">
           {/* toggle all */}
-          <input id="toggle-all" className="toggle-all" type="checkbox" onClick={toggleAll} />
+          <input id="toggle-all" className="toggle-all" type="checkbox" onClick={todos.toggleAll} />
           <label htmlFor="toggle-all">Mark all as complete</label>
 
           {/* todo list */}
           <ul className="todo-list">
-            {displayedTodos().map(todo => {
-              return <Todo key={todo.id} {...{ update, toggle, remove }} {...todo} />
+            {visibleTodos().map(todo => {
+              return (
+                <Todo
+                  key={todo.id}
+                  update={todos.update}
+                  toggle={todos.toggle}
+                  remove={todos.remove}
+                  {...todo}
+                />
+              )
             })}
           </ul>
         </section>
@@ -77,7 +87,7 @@ export function Todos({}) {
         <footer className="footer">
           {/* count */}
           <span className="todo-count">
-            {`${itemCount} ${activeTodos.length > 1 ? 'items left' : 'item left'}`}
+            {`${itemCount} ${todos.active.length > 1 ? 'items left' : 'item left'}`}
           </span>
 
           {/* filters */}
@@ -93,7 +103,7 @@ export function Todos({}) {
           <button
             className="clear-completed"
             onClick={() => {
-              clearCompleted()
+              todos.clearCompleted()
               setFilter('All')
             }}
           >
@@ -111,7 +121,9 @@ export function Todos({}) {
 }
 
 export interface TodosProps {
-  state: A.Doc<State>
+  all: TodoType[]
+  active: TodoType[]
+  completed: TodoType[]
   add: (value: string) => void
   toggleAll: () => void
   toggle: (id: string) => void
