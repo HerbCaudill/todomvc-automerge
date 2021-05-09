@@ -1,33 +1,15 @@
-﻿import React from 'react'
-import * as A from 'automerge'
-import { uuid } from './uuid'
-import { defaultState } from './defaultState'
-import { State, TodoType } from './types'
+﻿import { defaultState } from './defaultState'
 import { TodosProps } from './Todos'
-import { Synchronizer } from './Synchronizer'
+import { TodoType } from './types'
+import { useAutomergeSync } from './useAutomergeSync'
+import { uuid } from './uuid'
 
-const discoveryKey = 'frisky-meerkat'
+const key = 'frisky-meerkat'
 const urls = ['ws://localhost:8080']
 const userId = uuid().slice(32, 36)
 
-export const useTodos: TodosHook = () => {
-  const [state, setState] = React.useState(defaultState)
-  const [synchronizer] = React.useState(
-    () => new Synchronizer({ urls, userId, doc: state, discoveryKey })
-  )
-
-  // when we get changes from the ui, update our peers
-  const change = (cb: A.ChangeFn<State>) => {
-    const newState = synchronizer.change(cb)
-    setState(newState)
-    return newState
-  }
-
-  // when we get changes from peers, update the ui
-  synchronizer.on('change', (newState: State) => {
-    setState(newState)
-  })
-
+export function useTodos() {
+  const { state, change } = useAutomergeSync({ defaultState, urls, userId, key })
   return {
     state,
 

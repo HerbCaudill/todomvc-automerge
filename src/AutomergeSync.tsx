@@ -2,21 +2,21 @@
 import { Client, PeerEventPayload } from '@localfirst/relay-client'
 import EventEmitter from 'eventemitter3'
 
-export class Synchronizer extends EventEmitter {
+export class AutomergeSync extends EventEmitter {
   private client: Client
   private peers: Map<string, Peer> = new Map()
   private userId: string
-  private discoveryKey: string
-  private doc: A.Doc<any>
+  private key: string
+  private state: A.Doc<any>
 
   /**
    * Connects to peers via a @localfirst/relay to keep an Automerge document in sync
    */
-  constructor({ urls, userId, doc, discoveryKey }: SynchronizerOptions) {
+  constructor({ urls, userId, state, key }: SynchronizerOptions) {
     super()
-    this.discoveryKey = discoveryKey
+    this.key = key
     this.userId = userId
-    this.doc = doc
+    this.state = state
 
     // connect to relay server
     const url = urls[0] // TODO support multiple relay servers
@@ -29,7 +29,7 @@ export class Synchronizer extends EventEmitter {
 
       // once we connect to the relay server, tell them what we're interested in
       .on('server.connect', () => {
-        client.join(this.discoveryKey)
+        client.join(this.key)
       })
 
       // each time the relay server connects us to a peer, register the peer and listen for messages
@@ -97,7 +97,7 @@ export class Synchronizer extends EventEmitter {
     for (const [_peerId, peer] of this.peers) {
       // compares the current state of our document to each peer's last known state, and if we think
       // there are changes they don't have, generate a sync message
-      const [nextSyncState, message] = A.generateSyncMessage(this.doc, peer.syncState)
+      const [nextSyncState, message] = A.generateSyncMessage(this.state, peer.syncState)
 
       // update this peer's sync state
       peer.syncState = nextSyncState
@@ -117,12 +117,12 @@ export class Synchronizer extends EventEmitter {
   /** Handle an incoming sync message from a peer */
   private receive(peer: Peer, message: A.BinarySyncMessage) {
     // using the message, update our document and sync state for the peer
-    const [doc, nextSyncState] = A.receiveSyncMessage(this.doc, peer.syncState, message)
-    this.doc = doc
+    const [state, nextSyncState] = A.receiveSyncMessage(this.state, peer.syncState, message)
+    this.state = state
     peer.syncState = nextSyncState
 
     // send update to the application
-    this.emit('change', this.doc)
+    this.emit('change', this.state)
 
     // send updates to all our peers
     this.sync()
@@ -131,18 +131,18 @@ export class Synchronizer extends EventEmitter {
   /** Apply changes coming from the application to our document, and send updates to all peers. */
   public change(cb: A.ChangeFn<any>) {
     // apply the change to our document
-    this.doc = A.change(this.doc, cb)
+    this.state = A.change(this.state, cb)
 
     // send updates to all our peers
     this.sync()
 
-    return this.doc
+    return this.state
   }
 }
 
 export interface SynchronizerOptions {
   /** A unique string identifying the document we're collaborating on */
-  discoveryKey: string
+  key: string
 
   /** An array of URLs of known relay servers */
   urls: string[]
@@ -150,8 +150,8 @@ export interface SynchronizerOptions {
   /** A unique string identifying the local user (could be a UUID, a user id, an email address, etc.) */
   userId: string
 
-  /** The doc to keep synchronized */
-  doc: A.Doc<any>
+  /** The state to keep synchronized */
+  state: A.Doc<any>
 }
 
 interface Peer {
