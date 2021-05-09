@@ -1,8 +1,8 @@
-﻿import * as A from 'automerge'
-import { Client, PeerEventPayload } from '@localfirst/relay-client'
+﻿import { Client, PeerEventPayload } from '@localfirst/relay-client'
+import * as A from 'automerge'
 import EventEmitter from 'eventemitter3'
 
-export class AutomergeSync extends EventEmitter {
+export class AutomergeSync<T = any> extends EventEmitter {
   private client: Client
   private peers: Map<string, Peer> = new Map()
   private userId: string
@@ -12,7 +12,7 @@ export class AutomergeSync extends EventEmitter {
   /**
    * Connects to peers via a @localfirst/relay to keep an Automerge document in sync
    */
-  constructor({ urls, userId, state, key }: SynchronizerOptions) {
+  constructor({ urls, userId, state, key }: AutomergeSyncOptions<T>) {
     super()
     this.key = key
     this.userId = userId
@@ -140,7 +140,7 @@ export class AutomergeSync extends EventEmitter {
   }
 }
 
-export interface SynchronizerOptions {
+export interface AutomergeSyncOptions<T = any> {
   /** A unique string identifying the document we're collaborating on */
   key: string
 
@@ -151,11 +151,11 @@ export interface SynchronizerOptions {
   userId: string
 
   /** The state to keep synchronized */
-  state: A.Doc<any>
+  state: A.Doc<T>
 }
 
 interface Peer {
-  /** A unique string identifying the peer (corresponds to our userId) */
+  /** A unique string identifying the peer (= their userId) */
   peerId: string
 
   /** The WebSocket we're using to communicate with the peer */

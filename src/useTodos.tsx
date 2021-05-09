@@ -1,5 +1,4 @@
 ﻿import { defaultState } from './defaultState'
-import { TodosProps } from './Todos'
 import { TodoType } from './types'
 import { useAutomergeSync } from './useAutomergeSync'
 import { uuid } from './uuid'
@@ -9,7 +8,7 @@ const urls = ['ws://localhost:8080']
 const userId = uuid().slice(32, 36)
 
 export function useTodos() {
-  const { state, change } = useAutomergeSync({ defaultState, urls, userId, key })
+  const { state, change } = useAutomergeSync({ state: defaultState, urls, userId, key })
   return {
     state,
 
@@ -77,5 +76,3 @@ export function useTodos() {
     },
   }
 }
-
-type TodosHook = () => TodosProps
