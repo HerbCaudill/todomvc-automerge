@@ -1,9 +1,8 @@
-import * as A from 'automerge'
 import cn from 'classnames'
 import React from 'react'
 import 'todomvc-app-css/index.css'
 import { Todo } from './Todo'
-import { State, TodoType } from './types'
+import { TodoType } from './types'
 import { useTodos } from './useTodos'
 
 const EMPTY = ''
@@ -27,20 +26,11 @@ export function Todos({}) {
   const [filter, setFilter] = React.useState('All')
   const show = (f: string) => () => setFilter(f)
 
-  const visibleTodos = () => {
-    switch (filter) {
-      case 'All':
-        return todos.all
-      case 'Active':
-        return todos.active
-      case 'Completed':
-        return todos.completed
-      default:
-        throw new Error()
-    }
-  }
+  const key = filter.toLowerCase() as keyof TodosProps // = all | active | completed
+  const visibleTodos = todos[key] as TodoType[] // = todos.all | todos.active | todos.completed
 
-  const highlightIf = (which: string) => cn({ selected: filter === which })
+  // helper for highlighting the selected filter
+  const highlightIf = (which: string) => (filter === which ? 'selected' : EMPTY)
 
   // item count
 
@@ -70,7 +60,7 @@ export function Todos({}) {
 
           {/* todo list */}
           <ul className="todo-list">
-            {visibleTodos().map(todo => {
+            {visibleTodos.map(todo => {
               return (
                 <Todo
                   key={todo.id}
@@ -85,7 +75,7 @@ export function Todos({}) {
         </section>
 
         <footer className="footer">
-          {/* count */}
+          {/* item count */}
           <span className="todo-count">
             {`${itemCount} ${todos.active.length > 1 ? 'items left' : 'item left'}`}
           </span>
@@ -102,13 +92,12 @@ export function Todos({}) {
           {/* clear completed button */}
           <button
             className="clear-completed"
+            children={'Clear completed'}
             onClick={() => {
               todos.clearCompleted()
               setFilter('All')
             }}
-          >
-            Clear completed
-          </button>
+          />
         </footer>
       </section>
       <footer className="info">
@@ -128,14 +117,4 @@ export function Todos({}) {
   )
 }
 
-export interface TodosProps {
-  all: TodoType[]
-  active: TodoType[]
-  completed: TodoType[]
-  add: (value: string) => void
-  toggleAll: () => void
-  toggle: (id: string) => void
-  update: (modifiedTodo: TodoType) => void
-  remove: (id: string) => void
-  clearCompleted: () => void
-}
+export type TodosProps = ReturnType<typeof useTodos>
