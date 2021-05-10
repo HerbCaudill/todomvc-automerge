@@ -1,19 +1,41 @@
-﻿import { makeRandom } from '@herbcaudill/random'
-import { defaultState } from './defaultState'
+﻿import * as A from 'automerge'
 import { State, TodoType } from './types'
+import { makeRandom } from '@herbcaudill/random'
 import { useAutomergeSync } from './useAutomergeSync'
 import { uuid } from './uuid'
 
+// The user ID needs to be unique among all peers. If users might have multiple devices, then the
+// user ID should be specific to the device as well as the user. For this example we'll use a random
+// 3-letter userId.
 const random = makeRandom()
-
-const key = 'frisky-meerkat'
-const urls = ['ws://localhost:8080']
 const userId = random.alpha(3)
-console.log('my userId', userId)
+
+// The discovery key (or document ID) uniquely identifies this Automerge document (in this case, our
+// todo list). Anyone who knows the discovery key can connect with anyone else who knows it. In real
+// use this might be a UUID.
+const key = 'frisky-meerkat'
+
+// We need to provide the URL for at least one relay server. See
+// https://github.com/local-first-web/relay#readme for details.
+const urls = ['ws://localhost:8080']
+// Note: Multiple relay servers aren't supported yet, so we just use the first one.
+
+// This will be our application state when we load (or reload) the app.
+const defaultState = A.from<State>({
+  todos: [
+    { id: '0', completed: true, value: 'Learn React' },
+    { id: '1', completed: false, value: 'Learn Automerge' },
+    { id: '2', completed: false, value: 'Profit' },
+  ],
+})
 
 export function useSyncedState() {
-  const params = { defaultState, urls, userId, key }
-  const { state, change, connected, peerIds } = useAutomergeSync<State>(params)
+  const { state, change, connected, peerIds } = useAutomergeSync<State>({
+    defaultState,
+    urls,
+    userId,
+    key,
+  })
 
   return {
     // connection status
