@@ -159,7 +159,6 @@ export class AutomergeSync<T = any> extends EventEmitter {
     // using the message, update our document and sync state for the peer
     const [state, nextSyncState] = A.receiveSyncMessage(this.state, peer.syncState, message)
     this.state = state
-
     peer.syncState = nextSyncState
 
     // send update to the application
