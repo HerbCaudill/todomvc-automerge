@@ -1,13 +1,19 @@
-﻿import { Client, PeerEventPayload } from '@localfirst/relay-client'
+﻿import equal from 'fast-deep-equal'
+import { Client, PeerEventPayload } from '@localfirst/relay-client'
 import * as A from 'automerge'
 import EventEmitter from 'eventemitter3'
+import { State } from './types'
 
 export class AutomergeSync<T = any> extends EventEmitter {
+  private key: string
+  private userId: string
+  private state: A.Doc<any>
+  private urls: string[]
+
   private client: Client
   private peers: Map<string, Peer> = new Map()
-  private userId: string
-  private key: string
-  private state: A.Doc<any>
+
+  public connected = false
 
   /**
    * Connects to peers via a @localfirst/relay to keep an Automerge document in sync
@@ -17,51 +23,82 @@ export class AutomergeSync<T = any> extends EventEmitter {
     this.key = key
     this.userId = userId
     this.state = state
+    this.urls = urls
 
     // connect to relay server
-    const url = urls[0] // TODO support multiple relay servers
-    this.client = this.connectServer(url)
+    this.client = this.createRelayClient()
+  }
+
+  // PUBLIC
+
+  public get peerIds() {
+    return Array.from(this.peers.keys())
+  }
+
+  /** Apply changes coming from the application to our document, and send updates to all peers. */
+  public change(cb: A.ChangeFn<any>) {
+    // apply the change to our document
+    this.state = A.change(this.state, cb)
+
+    // send updates to all our peers
+    this.sync()
+
+    return this.state
   }
 
   /** Connect to a @localfirst/relay server to see if there are peers to connect to */
-  private connectServer(url: string): Client {
-    const client = new Client({ userName: this.userId, url })
-
-      // once we connect to the relay server, tell them what we're interested in
-      .on('server.connect', () => {
-        client.join(this.key)
-      })
-
-      // each time the relay server connects us to a peer, register the peer and listen for messages
-      .on('peer.connect', ({ userName: peerId, socket }: PeerEventPayload) => {
-        socket.binaryType = 'arraybuffer'
-        this.connectPeer(socket, peerId)
-      })
-
-      // when the peer disconnects, clean up
-      .on('peer.disconnect', ({ userName: peerId }) => {
-        this.disconnectPeer(peerId)
-      })
-
-      // when the server disconnects, clean up
-      .on('server.disconnect', () => {
-        this.disconnectServer()
-      })
-
-    return client
+  public connectRelay() {
+    this.client = this.createRelayClient()
   }
 
   /** Clean up when the relay server is disconected from us */
-  public disconnectServer() {
-    this.client.removeAllListeners()
+  public disconnectRelay() {
     // close all our sockets
     for (const [peerId] of this.peers) {
       this.disconnectPeer(peerId)
     }
+    this.emit('server.disconnect')
+    this.connected = false
+  }
+
+  // PRIVATE
+
+  private createRelayClient() {
+    const url = this.urls[0] // TODO support multiple relay servers
+
+    const client = new Client({ userName: this.userId, url })
+
+    // once we connect to the relay server, tell them what we're interested in
+    client.on('server.connect', () => {
+      this.connected = true
+      client.join(this.key)
+      this.emit('server.connect')
+    })
+
+    // each time the relay server connects us to a peer, register the peer and listen for messages
+    client.on('peer.connect', ({ userName: peerId, socket }: PeerEventPayload) => {
+      this.connectPeer(socket, peerId)
+      this.emit('peer.connect', peerId)
+    })
+
+    // when the peer disconnects, clean up
+    client.on('peer.disconnect', ({ userName: peerId }: PeerEventPayload) => {
+      this.disconnectPeer(peerId)
+      this.emit('peer.disconnect', peerId)
+    })
+
+    // when the server disconnects, clean up
+    client.on('server.disconnect', () => {
+      this.disconnectRelay()
+    })
+
+    return client
   }
 
   /** Register a new peer and listens for incoming messages */
   private connectPeer(socket: WebSocket, peerId: string) {
+    socket.binaryType = 'arraybuffer' // Automerge sync messages are byte arrays
+
     const peer = { peerId, socket, syncState: A.initSyncState() }
     this.peers.set(peerId, peer)
 
@@ -74,6 +111,8 @@ export class AutomergeSync<T = any> extends EventEmitter {
     socket.addEventListener('close', () => {
       this.disconnectPeer(peerId)
     })
+
+    this.sync()
   }
 
   /** Clean up when a peer is disconnected from a peer */
@@ -119,6 +158,7 @@ export class AutomergeSync<T = any> extends EventEmitter {
     // using the message, update our document and sync state for the peer
     const [state, nextSyncState] = A.receiveSyncMessage(this.state, peer.syncState, message)
     this.state = state
+
     peer.syncState = nextSyncState
 
     // send update to the application
@@ -126,17 +166,6 @@ export class AutomergeSync<T = any> extends EventEmitter {
 
     // send updates to all our peers
     this.sync()
-  }
-
-  /** Apply changes coming from the application to our document, and send updates to all peers. */
-  public change(cb: A.ChangeFn<any>) {
-    // apply the change to our document
-    this.state = A.change(this.state, cb)
-
-    // send updates to all our peers
-    this.sync()
-
-    return this.state
   }
 }
 
@@ -163,4 +192,8 @@ interface Peer {
 
   /** The Automerge sync state we're keeping track of for this peer */
   syncState: A.SyncState
+}
+
+const summarize = (state: State) => {
+  return state.todos.map(t => `${t.completed ? '✅' : '🟩'} ${t.value}`).join('\n')
 }

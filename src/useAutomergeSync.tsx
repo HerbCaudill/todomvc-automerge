@@ -10,7 +10,31 @@ export function useAutomergeSync<T>({
   key,
 }: UseAutomergeSyncOptions) {
   const [state, setState] = React.useState<A.Doc<T>>(defaultState)
-  const [synchronizer] = React.useState(() => new AutomergeSync({ urls, userId, key, state }))
+  const [connected, setConnected] = React.useState(false)
+  const [peerIds, setPeerIds] = React.useState<string[]>([])
+
+  const [synchronizer] = React.useState(() => {
+    const synchronizer = new AutomergeSync({ urls, userId, key, state })
+    synchronizer
+      // when we get changes from peers, update the application
+      .on('change', (newState: A.Doc<T>) => {
+        setState(newState)
+      })
+      .on('server.connect', () => {
+        setConnected(true)
+      })
+      .on('server.disconnect', () => {
+        setConnected(false)
+      })
+      .on('peer.connect', peerId => {
+        setPeerIds(synchronizer.peerIds)
+      })
+      .on('peer.disconnect', peerId => {
+        setPeerIds(synchronizer.peerIds)
+      })
+
+    return synchronizer
+  })
 
   // when we get changes from the application, update our peers
   const change = (cb: A.ChangeFn<State>) => {
@@ -18,12 +42,12 @@ export function useAutomergeSync<T>({
     setState(newState)
   }
 
-  // when we get changes from peers, update the application
-  synchronizer.on('change', (newState: A.Doc<T>) => {
-    setState(newState)
-  })
-
-  return { state, change }
+  return {
+    state,
+    change,
+    connected,
+    peerIds,
+  }
 }
 
 type UseAutomergeSyncOptions = Rename<AutomergeSyncOptions, 'state', 'defaultState'>

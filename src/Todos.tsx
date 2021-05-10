@@ -1,23 +1,25 @@
-import cn from 'classnames'
 import React from 'react'
 import 'todomvc-app-css/index.css'
 import { Todo } from './Todo'
 import { TodoType } from './types'
-import { useTodos } from './useTodos'
+import { useSyncedState } from './useSyncedState'
 
 const EMPTY = ''
 
 export function Todos({}) {
-  const todos = useTodos()
+  const todos = useSyncedState()
+  const { peerIds, connected } = todos
+
+  const peerCount = peerIds.length
 
   // new todo
   const [newTodo, setNewTodo] = React.useState(EMPTY)
 
   const onNewTodo = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && newTodo.length > 0) {
-      todos.add(newTodo)
-      setNewTodo(EMPTY) // clear input
-    }
+    if (e.key !== 'Enter') return
+    if (!newTodo.length) return
+    todos.add(newTodo)
+    setNewTodo(EMPTY) // clear input
   }
 
   // filter buttons
@@ -100,21 +102,47 @@ export function Todos({}) {
           />
         </footer>
       </section>
-      <footer className="info">
-        <a
-          href="http://github.com/automerge/automerge"
-          className="logo"
-          title="Learn more about Automerge"
-          target="_blank"
+      <footer>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            lineHeight: 1,
+          }}
         >
-          <img
-            src="https://raw.githubusercontent.com/automerge/automerge/main/img/sign.svg"
-            alt="Automerge"
-          />
-        </a>
+          <label
+            style={{
+              marginRight: '20px',
+              padding: '9px 15px',
+              border: '1px solid #ddd',
+              borderRadius: '.5em',
+            }}
+            title={peerCount ? 'peers: ' + todos.peerIds.join(', ') : ''}
+          >
+            <span>
+              {connected
+                ? `🟢 online (${peerCount} peer${peerCount === 1 ? '' : 's'})`
+                : '🔴 offline'}
+            </span>
+          </label>
+
+          <a
+            href="http://github.com/automerge/automerge"
+            className="logo"
+            title="Learn more about Automerge"
+            target="_blank"
+          >
+            <img
+              height="36"
+              src="https://raw.githubusercontent.com/automerge/automerge/main/img/sign.svg"
+              alt="Automerge"
+            />
+          </a>
+        </div>
       </footer>
     </>
   )
 }
 
-export type TodosProps = ReturnType<typeof useTodos>
+export type TodosProps = ReturnType<typeof useSyncedState>

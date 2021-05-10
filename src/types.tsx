@@ -7,6 +7,5 @@ export type TodoType = {
 }
 
 export type State = {
-  // todos: TodoType[]
   todos: A.List<TodoType>
 }
