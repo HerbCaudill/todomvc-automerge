@@ -4,23 +4,31 @@
   "license": "MIT",
   "author": "herb@devresults.com",
   "scripts": {
-    "dev": "vite",
+    "dev:relay": "cross-env DEBUG='lf*' DEBUG_COLORS=1 node ./scripts/start-relay-server.js",
+    "dev:serve": "vite",
+    "dev": "run-p dev:*",
     "build": "tsc && vite build",
-    "serve": "vite preview",
-    "postinstall": "cd node_modules/automerge && yarn && yarn build && cd ../.."
+    "serve": "vite preview"
   },
   "dependencies": {
-    "automerge": "git+https://@github.com/automerge/automerge.git#performance",
-    "todomvc-app-css": "2",
+    "@herbcaudill/random": "^0.1.5",
+    "@localfirst/relay": "3",
+    "@localfirst/relay-client": "3",
+    "automerge": "1.0.1-preview.0",
     "classnames": "2",
+    "eventemitter3": "4",
     "react": "17",
-    "react-dom": "17"
+    "react-dom": "17",
+    "todomvc-app-css": "2"
   },
   "devDependencies": {
     "@types/classnames": "2",
+    "@types/node": "15",
     "@types/react": "17",
     "@types/react-dom": "17",
     "@vitejs/plugin-react-refresh": "1",
+    "cross-env": "7",
+    "npm-run-all": "4",
     "typescript": "4",
     "vite": "2"
   },

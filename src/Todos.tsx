@@ -1,53 +1,48 @@
-import * as A from 'automerge'
-import cn from 'classnames'
 import React from 'react'
 import 'todomvc-app-css/index.css'
 import { Todo } from './Todo'
-import { State, TodoType } from './types'
+import { TodoType } from './types'
+import { useSyncedState } from './useSyncedState'
 
-export function Todos({
-  state,
-  addNewTodo,
-  toggleTodo,
-  updateTodo,
-  toggleAll,
-  clearCompletedTodos,
-  deleteTodo,
-  todosTitle = 'todos',
-}: TodosProps) {
-  const { todos } = state
+const EMPTY = ''
 
-  // filters
-  const [filter, setFilter] = React.useState('all')
-  const show = (f: string) => () => setFilter(f)
+export function Todos({}) {
+  const todos = useSyncedState()
+  const { peerIds, connected } = todos
 
-  const todosMap = {
-    all: todos,
-    active: todos.filter(t => !t.completed),
-    completed: todos.filter(t => t.completed),
-  } as Record<string, TodoType[]>
-
-  const filteredTodos = todosMap[filter]
+  const peerCount = peerIds.length
 
   // new todo
-  const [newTodo, setNewTodo] = React.useState('')
+  const [newTodo, setNewTodo] = React.useState(EMPTY)
 
   const onNewTodo = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && newTodo.length > 0) {
-      addNewTodo(newTodo)
-      setNewTodo('') // clear input
-    }
+    if (e.key !== 'Enter') return
+    if (!newTodo.length) return
+    todos.add(newTodo)
+    setNewTodo(EMPTY) // clear input
   }
 
-  const highlightIf = (which: string) => cn({ selected: filter === which })
+  // filter buttons
+  const filters = ['All', 'Active', 'Completed']
 
-  const itemCount = `${todosMap.active.length}/${todos.length}`
+  const [filter, setFilter] = React.useState('All')
+  const show = (f: string) => () => setFilter(f)
+
+  const key = filter.toLowerCase() as keyof TodosProps // = all | active | completed
+  const visibleTodos = todos[key] as TodoType[] // = todos.all | todos.active | todos.completed
+
+  // helper for highlighting the selected filter
+  const highlightIf = (which: string) => (filter === which ? 'selected' : EMPTY)
+
+  // item count
+
+  const itemCount = `${todos.active.length}/${todos.all.length}`
 
   return (
     <>
       <section className="todoapp">
         <header className="header">
-          <h1>{todosTitle}</h1>
+          <h1>todos</h1>
 
           {/* new todo input */}
           <input
@@ -62,30 +57,36 @@ export function Todos({
 
         <section className="main">
           {/* toggle all */}
-          <input id="toggle-all" className="toggle-all" type="checkbox" onClick={toggleAll} />
+          <input id="toggle-all" className="toggle-all" type="checkbox" onClick={todos.toggleAll} />
           <label htmlFor="toggle-all">Mark all as complete</label>
 
           {/* todo list */}
           <ul className="todo-list">
-            {filteredTodos.map(todo => {
-              return <Todo key={todo.id} {...{ updateTodo, toggleTodo, deleteTodo }} {...todo} />
+            {visibleTodos.map(todo => {
+              return (
+                <Todo
+                  key={todo.id}
+                  update={todos.update}
+                  toggle={todos.toggle}
+                  remove={todos.remove}
+                  {...todo}
+                />
+              )
             })}
           </ul>
         </section>
 
         <footer className="footer">
-          {/* count */}
+          {/* item count */}
           <span className="todo-count">
-            {`${itemCount} ${todosMap.active.length > 1 ? 'items left' : 'item left'}`}
+            {`${itemCount} ${todos.active.length > 1 ? 'items left' : 'item left'}`}
           </span>
 
           {/* filters */}
           <ul className="filters">
-            {['All', 'Active', 'Completed'].map(f => (
+            {filters.map(f => (
               <li key={f}>
-                <a className={highlightIf(f.toLowerCase())} onClick={show(f.toLowerCase())}>
-                  {f}
-                </a>
+                <a className={highlightIf(f)} onClick={show(f)} children={f} />
               </li>
             ))}
           </ul>
@@ -93,32 +94,55 @@ export function Todos({
           {/* clear completed button */}
           <button
             className="clear-completed"
+            children={'Clear completed'}
             onClick={() => {
-              clearCompletedTodos()
-              setFilter('all')
+              todos.clearCompleted()
+              setFilter('All')
             }}
-          >
-            Clear completed
-          </button>
+          />
         </footer>
       </section>
-      <footer className="info">
-        <p>
-          Learn more about <a href="http://github.com/automerge/automerge">Automerge</a>
-        </p>
+      <footer>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            lineHeight: 1,
+          }}
+        >
+          <label
+            style={{
+              marginRight: '20px',
+              padding: '9px 15px',
+              border: '1px solid #ddd',
+              borderRadius: '.5em',
+            }}
+            title={peerCount ? 'peers: ' + todos.peerIds.join(', ') : ''}
+          >
+            <span>
+              {connected
+                ? `🟢 online (${peerCount} peer${peerCount === 1 ? '' : 's'})`
+                : '🔴 offline'}
+            </span>
+          </label>
+
+          <a
+            href="http://github.com/automerge/automerge"
+            className="logo"
+            title="Learn more about Automerge"
+            target="_blank"
+          >
+            <img
+              height="36"
+              src="https://raw.githubusercontent.com/automerge/automerge/main/img/sign.svg"
+              alt="Automerge"
+            />
+          </a>
+        </div>
       </footer>
     </>
   )
 }
 
-export interface TodosProps {
-  state: A.Doc<State>
-  addNewTodo: (value: string) => void
-  toggleAll: () => void
-  toggleTodo: (id: string) => void
-  updateTodo: (modifiedTodo: TodoType) => void
-  deleteTodo: (id: string) => void
-  clearCompletedTodos: () => void
-  todosTitle?: string
-  children?: React.ReactNode
-}
+export type TodosProps = ReturnType<typeof useSyncedState>

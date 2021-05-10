@@ -3,7 +3,7 @@ import React from 'react'
 import { TodoType } from './types'
 import { TodosProps } from './Todos'
 
-export const Todo = ({ updateTodo, toggleTodo, deleteTodo, id, value, completed }: TodoProps) => {
+export const Todo = ({ update, toggle, remove, id, value, completed }: TodoProps) => {
   const [editing, setEditing] = React.useState(false)
   const [newValue, setNewValue] = React.useState(value)
 
@@ -17,10 +17,10 @@ export const Todo = ({ updateTodo, toggleTodo, deleteTodo, id, value, completed 
     setEditing(false)
     if (newValue.length) {
       // save the new value if it's non-empty
-      updateTodo({ id, value: newValue, completed })
+      update({ id, value: newValue, completed })
     } else {
       // clearing the text deletes the todo
-      deleteTodo(id)
+      remove(id)
     }
   }
 
@@ -28,12 +28,7 @@ export const Todo = ({ updateTodo, toggleTodo, deleteTodo, id, value, completed 
     <li className={cn({ completed, editing })}>
       {/* viewing */}
       <div className="view">
-        <input
-          className="toggle"
-          type="checkbox"
-          checked={completed}
-          onChange={() => toggleTodo(id)}
-        />
+        <input className="toggle" type="checkbox" checked={completed} onChange={() => toggle(id)} />
         <label
           onDoubleClick={e => {
             e.preventDefault()
@@ -42,7 +37,7 @@ export const Todo = ({ updateTodo, toggleTodo, deleteTodo, id, value, completed 
         >
           {value}
         </label>
-        <button className="destroy" onClick={() => deleteTodo(id)}></button>
+        <button className="destroy" onClick={() => remove(id)}></button>
       </div>
 
       {/* editing */}
@@ -60,6 +55,4 @@ export const Todo = ({ updateTodo, toggleTodo, deleteTodo, id, value, completed 
   )
 }
 
-export interface TodoProps
-  extends Pick<TodosProps, 'updateTodo' | 'toggleTodo' | 'deleteTodo'>,
-    TodoType {}
+export type TodoProps = TodoType & Pick<TodosProps, 'update' | 'toggle' | 'remove'>
