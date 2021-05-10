@@ -55,4 +55,4 @@ export const Todo = ({ update, toggle, remove, id, value, completed }: TodoProps
   )
 }
 
-export interface TodoProps extends Pick<TodosProps, 'update' | 'toggle' | 'remove'>, TodoType {}
+export type TodoProps = TodoType & Pick<TodosProps, 'update' | 'toggle' | 'remove'>
