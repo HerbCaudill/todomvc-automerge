@@ -11,6 +11,7 @@ export class AutomergeSync<T = any> extends EventEmitter {
   private client: Client
   private peers: Map<string, Peer> = new Map()
 
+  /** Our online/offline status, for use by the application */
   public connected = false
 
   /**
@@ -29,6 +30,7 @@ export class AutomergeSync<T = any> extends EventEmitter {
 
   // PUBLIC
 
+  /** List of our peer IDs for use by the application */
   public get peerIds() {
     return Array.from(this.peers.keys())
   }
@@ -66,29 +68,30 @@ export class AutomergeSync<T = any> extends EventEmitter {
 
     const client = new Client({ userName: this.userId, url })
 
-    // once we connect to the relay server, tell them what we're interested in
-    client.on('server.connect', () => {
-      this.connected = true
-      client.join(this.key)
-      this.emit('server.connect')
-    })
+    client
+      // once we connect to the relay server, tell them what we're interested in
+      .on('server.connect', () => {
+        this.connected = true
+        client.join(this.key)
+        this.emit('server.connect')
+      })
 
-    // each time the relay server connects us to a peer, register the peer and listen for messages
-    client.on('peer.connect', ({ userName: peerId, socket }: PeerEventPayload) => {
-      this.connectPeer(socket, peerId)
-      this.emit('peer.connect', peerId)
-    })
+      // each time the relay server connects us to a peer, register the peer and listen for messages
+      .on('peer.connect', ({ userName: peerId, socket }: PeerEventPayload) => {
+        this.connectPeer(socket, peerId)
+        this.emit('peer.connect', peerId)
+      })
 
-    // when the peer disconnects, clean up
-    client.on('peer.disconnect', ({ userName: peerId }: PeerEventPayload) => {
-      this.disconnectPeer(peerId)
-      this.emit('peer.disconnect', peerId)
-    })
+      // when the peer disconnects, clean up
+      .on('peer.disconnect', ({ userName: peerId }: PeerEventPayload) => {
+        this.disconnectPeer(peerId)
+        this.emit('peer.disconnect', peerId)
+      })
 
-    // when the server disconnects, clean up
-    client.on('server.disconnect', () => {
-      this.disconnectRelay()
-    })
+      // when the server disconnects, clean up
+      .on('server.disconnect', () => {
+        this.disconnectRelay()
+      })
 
     return client
   }
