@@ -112,9 +112,17 @@ export function Todos({}) {
         </footer>
       </section>
       <footer className="info">
-        <p>
-          Learn more about <a href="http://github.com/automerge/automerge">Automerge</a>
-        </p>
+        <a
+          href="http://github.com/automerge/automerge"
+          className="logo"
+          title="Learn more about Automerge"
+          target="_blank"
+        >
+          <img
+            src="https://raw.githubusercontent.com/automerge/automerge/main/img/sign.svg"
+            alt="Automerge"
+          />
+        </a>
       </footer>
     </>
   )
