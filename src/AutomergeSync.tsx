@@ -1,8 +1,6 @@
-﻿import equal from 'fast-deep-equal'
-import { Client, PeerEventPayload } from '@localfirst/relay-client'
+﻿import { Client, PeerEventPayload } from '@localfirst/relay-client'
 import * as A from 'automerge'
 import EventEmitter from 'eventemitter3'
-import { State } from './types'
 
 export class AutomergeSync<T = any> extends EventEmitter {
   private key: string
@@ -192,8 +190,4 @@ interface Peer {
 
   /** The Automerge sync state we're keeping track of for this peer */
   syncState: A.SyncState
-}
-
-const summarize = (state: State) => {
-  return state.todos.map(t => `${t.completed ? '✅' : '🟩'} ${t.value}`).join('\n')
 }
