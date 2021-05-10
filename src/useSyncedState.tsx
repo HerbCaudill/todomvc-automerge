@@ -1,16 +1,26 @@
-﻿import { defaultState } from './defaultState'
+﻿import { makeRandom } from '@herbcaudill/random'
+import { defaultState } from './defaultState'
 import { State, TodoType } from './types'
 import { useAutomergeSync } from './useAutomergeSync'
 import { uuid } from './uuid'
 
+const random = makeRandom()
+
 const key = 'frisky-meerkat'
 const urls = ['ws://localhost:8080']
-const userId = uuid().slice(32, 36)
+const userId = random.alpha(3)
+console.log('my userId', userId)
 
-export function useTodos() {
-  const { state, change } = useAutomergeSync<State>({ defaultState, urls, userId, key })
+export function useSyncedState() {
+  const params = { defaultState, urls, userId, key }
+  const { state, change, connected, peerIds } = useAutomergeSync<State>(params)
 
   return {
+    // connection status
+
+    connected,
+    peerIds,
+
     // "selectors"
 
     all: state.todos,
