@@ -11,9 +11,13 @@ export function useTodos() {
   const { state, change } = useAutomergeSync<State>({ defaultState, urls, userId, key })
 
   return {
+    // "selectors"
+
     all: state.todos,
     active: state.todos.filter(t => !t.completed),
     completed: state.todos.filter(t => t.completed),
+
+    // "reducers"
 
     add(value: string) {
       change(s => {
