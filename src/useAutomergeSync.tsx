@@ -28,5 +28,5 @@ export function useAutomergeSync<T>({
 
 type UseAutomergeSyncOptions = Rename<AutomergeSyncOptions, 'state', 'defaultState'>
 
-// https://stackoverflow.com/a/59071783/239663
+/** Rename one property of a type (see https://stackoverflow.com/a/59071783/239663) */
 type Rename<T, K extends keyof T, R extends PropertyKey> = Omit<T, K> & { [P in R]: T[K] }
