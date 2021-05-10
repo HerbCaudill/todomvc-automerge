@@ -212,6 +212,13 @@
     "@babel/helper-validator-identifier" "^7.14.0"
     to-fast-properties "^2.0.0"
 
+"@herbcaudill/random@^0.1.5":
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/@herbcaudill/random/-/random-0.1.5.tgz#484c903b383bca8f3fa001d5e38e0957bad470c9"
+  integrity sha512-aa4Z3Jw0Bcm1FDFWze/3KsNQjvQEU5rEaSouT44Y4m2V/dHDGM6e5mBDP+JbDNNd6NuvlwsKoEMP/pe+cRWKng==
+  dependencies:
+    seed-random "^2.2.0"
+
 "@localfirst/relay-client@3":
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/@localfirst/relay-client/-/relay-client-3.0.3.tgz#6e494df91e04f46f78bcfe20d450bb496ffd21ac"
@@ -1192,6 +1199,11 @@ scheduler@^0.20.2:
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
+
+seed-random@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/seed-random/-/seed-random-2.2.0.tgz#2a9b19e250a817099231a5b99a4daf80b7fbed54"
+  integrity sha1-KpsZ4lCoFwmSMaW5mk2vgLf77VQ=
 
 "semver@2 || 3 || 4 || 5", semver@^5.5.0:
   version "5.7.1"

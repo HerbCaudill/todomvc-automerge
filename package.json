@@ -11,6 +11,7 @@
     "serve": "vite preview"
   },
   "dependencies": {
+    "@herbcaudill/random": "^0.1.5",
     "@localfirst/relay": "3",
     "@localfirst/relay-client": "3",
     "automerge": "1.0.1-preview.0",
