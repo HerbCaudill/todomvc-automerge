@@ -20,8 +20,23 @@ const key = 'frisky-meerkat'
 const urls = ['ws://localhost:8080']
 // Note: Multiple relay servers aren't supported yet, so we just use the first one.
 
+const initWithNullAuthor = function <T = object>(initialState: T) {
+  const emptyDoc = A.init<T>('0000')
+  const changeOptions = { time: 0 }
+  return A.load<T>(
+    //@ts-ignore
+    A.getLastLocalChange(
+      A.change(
+        emptyDoc, //
+        changeOptions,
+        s => Object.assign(s, initialState)
+      )
+    )
+  )
+}
+
 // This will be our application state when we load (or reload) the app.
-const defaultState = A.from<State>({
+const defaultState = initWithNullAuthor<State>({
   todos: [
     { id: '0', completed: true, value: 'Learn React' },
     { id: '1', completed: false, value: 'Learn Automerge' },
@@ -29,7 +44,7 @@ const defaultState = A.from<State>({
   ],
 })
 
-export function useSyncedState() {
+export function useSyncedTodos() {
   const { state, change, connected, peerIds } = useAutomergeSync<State>({
     defaultState,
     urls,

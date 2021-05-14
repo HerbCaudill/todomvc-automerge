@@ -2,12 +2,12 @@ import React from 'react'
 import 'todomvc-app-css/index.css'
 import { Todo } from './Todo'
 import { TodoType } from './types'
-import { useSyncedState } from './useSyncedState'
+import { useSyncedTodos } from './useSyncedTodos'
 
 const EMPTY = ''
 
 export function Todos({}) {
-  const todos = useSyncedState()
+  const todos = useSyncedTodos()
   const { peerIds, connected } = todos
 
   const peerCount = peerIds.length
@@ -145,4 +145,4 @@ export function Todos({}) {
   )
 }
 
-export type TodosProps = ReturnType<typeof useSyncedState>
+export type TodosProps = ReturnType<typeof useSyncedTodos>
